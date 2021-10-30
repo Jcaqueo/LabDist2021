@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+
+option go_package = "/proto";
+
+package pozo;
+
+message Message {
+    string name = 1;
+    int32 amount = 2;
+}
+
+service ServiceMessage{
+    rpc Sayhello(Message) returns (Message) {}
+}
