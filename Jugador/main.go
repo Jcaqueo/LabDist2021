@@ -8,8 +8,7 @@ import (
 	//"math/rand"
 	"time"
 
-	//pb "Jugador/proto"
-	pb "github.com/Jcaqueo/LabDist2021/Lider/proto"
+	pb "Jugador/proto"
 
 	"google.golang.org/grpc"
 )
@@ -18,8 +17,8 @@ const (
 	//Coneccion al Lider
 	addressLider = "localhost:50051"
 )
-
-func Conect() (pb.StartServerClient, context.Context){
+//(pb.StartServerClient, context.Context)
+func Conect() (){
 		//Conneccion al Lider
 		connLider, errLider := grpc.Dial(addressLider, grpc.WithInsecure(), grpc.WithBlock())
 		if errLider != nil {
@@ -30,18 +29,25 @@ func Conect() (pb.StartServerClient, context.Context){
 		cLider := pb.NewStartServerClient(connLider)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
+		//log.Printf("Greeting: %s", cLider)
+		status, err := cLider.Juego1(ctx, &pb.Playermove{Move: 4,})
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
 
-		return cLider,ctx
+		log.Printf("Greeting: %s", status)
+
+		return 
 
 }
 
-func (s *server) AgregarJugador(ctx context.Context, jugador *pb.Name ) (*pb.Status, error){
+// func (s *server) AgregarJugador(ctx context.Context, jugador *pb.Name ) (*pb.Status, error){
 
-	retorno := &pb.Status{
-		Status: true,
-	  }
-	return retorno, nil
-}
+// 	retorno := &pb.Status{
+// 		Status: true,
+// 	  }
+// 	return retorno, nil
+// }
 
 func main() {
 
@@ -61,8 +67,13 @@ func main() {
 		}
 
 		if decision == 1 {
-			cLider,ctx := Conect()
-			status, err := cLider.AgregarJugador(ctx, &pb.AgregarJugador{Name: "Pedrito",})
+			//cLider,ctx := Conect()
+			fmt.Print("Entro decision 1")
+			Conect()
+			return
+			var err *int = nil
+			status := true
+			//status, err := cLider.AgregarJugador(ctx, &pb.AgregarJugador{Name: "Pedrito",})
 			if err != nil {
 				log.Fatalf("could not greet: %v", err)
 			}
@@ -81,12 +92,12 @@ func main() {
 						// 	log.Fatalf("could not greet: %v", err)
 						// }
 						//status == true -> vivo
-						status, err := cLider.Juego1(ctx, &pb.Playermove{Move: respuesta,})
+						//status, err := cLider.Juego1(ctx, &pb.Playermove{Move: respuesta,})
 						if err != nil {
 							log.Fatalf("could not greet: %v", err)
 						}
 						//almacenamos el estado
-						eliminado = !status.Status 
+						eliminado = status 
 						if eliminado == true {
 							juego = 0
 							break

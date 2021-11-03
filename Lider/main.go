@@ -19,7 +19,7 @@ const (
 
 var siguientepaso int = 0
 var esperandoporjugadores int = 16
-var juego1 int32
+var juego1 int32 = 1
 
 // Server
 type server struct {
@@ -46,9 +46,9 @@ func InitServer(port string) {
 func (s *server) AgregarJugador(ctx context.Context, jugador *pb.Name ) (*pb.Status, error){
 	fmt.Println("El jugador %v fue anadido al juego",jugador)
 	//tiempo muerto esperando que el lider inicie el juego
-	for siguientepaso < 1 {
+	// for siguientepaso < 1 {
 		
-	}
+	// }
 
 	//cuando cambie el estado devolvemos la variable
 	siguientepaso = 0
@@ -60,6 +60,7 @@ func (s *server) AgregarJugador(ctx context.Context, jugador *pb.Name ) (*pb.Sta
 }
 
 func (s *server) Juego1(ctx context.Context, movidajugador *pb.Playermove ) (*pb.Status , error){
+	fmt.Println("El jugador %v fue anadido al juego",movidajugador)
 	//ya se escogio el numero random por lo tanto haremos el check
 	if movidajugador.Move >= juego1 {
 		//cuando cambie el estado devolvemos la variable
