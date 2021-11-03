@@ -3,7 +3,7 @@ syntax = "proto3";
 
 option go_package = "/proto";
 
-package lider;
+package jugador;
 
 message Name {
     string name = 1;
