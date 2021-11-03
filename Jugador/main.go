@@ -8,7 +8,8 @@ import (
 	//"math/rand"
 	"time"
 
-	pb "Jugador/proto"
+	//pb "Jugador/proto"
+	pb "github.com/Jcaqueo/LabDist2021/Lider/proto"
 
 	"google.golang.org/grpc"
 )
