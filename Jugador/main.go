@@ -17,6 +17,9 @@ const (
 	//Coneccion al Lider
 	addressLider = "localhost:50051"
 )
+
+var esperandoorden int32 = 1
+
 //(pb.StartServerClient, context.Context)
 func Conect() (){
 		//Conneccion al Lider
@@ -29,15 +32,40 @@ func Conect() (){
 		cLider := pb.NewStartServerClient(connLider)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		//log.Printf("Greeting: %s", cLider)
-		status, err := cLider.Juego1(ctx, &pb.Playermove{Move: 4,})
+		_, err := cLider.AgregarJugador(ctx, &pb.Name{Name: "Benja",})
 		if err != nil {
 			log.Fatalf("could not greet: %v", err)
 		}
 
-		log.Printf("Greeting: %s", status)
+		log.Printf("Fuiste añadio al juego!")
 
 		return 
+
+}
+
+func PedirinicioDejuego() (){
+	//Conneccion al Lider
+	connLider, errLider := grpc.Dial(addressLider, grpc.WithInsecure(), grpc.WithBlock())
+	if errLider != nil {
+		log.Fatalf("did not connect: %v", errLider)
+	}
+	defer connLider.Close()
+	//retornamos la instancia con el lider
+	cLider := pb.NewStartServerClient(connLider)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	r, err := cLider.Siguientejuego(ctx, &pb.Name{Name: "Benja",})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	//log.Printf("%v",r.Answer)
+	if r.Answer == 1{
+		esperandoorden = 0
+	} else{
+		esperandoorden = 1
+	}
+
+	return 
 
 }
 
@@ -67,10 +95,16 @@ func main() {
 		}
 
 		if decision == 1 {
-			//cLider,ctx := Conect()
-			fmt.Print("Entro decision 1")
 			Conect()
-			return
+			//esperamos que el lider empiece el juego
+			for esperandoorden >= 1{
+				//estamos esperando orden
+				//llamamos a la funcion
+				PedirinicioDejuego()
+				
+				time.Sleep(2 * time.Second)
+				fmt.Println("Esperando que inicie el juego")
+			}
 			var err *int = nil
 			status := true
 			//status, err := cLider.AgregarJugador(ctx, &pb.AgregarJugador{Name: "Pedrito",})
@@ -83,16 +117,6 @@ func main() {
 					for ronda := 1; ronda <= 4; ronda++ {
 						fmt.Print("Jugador 1, Ingrese su número: ")
 						fmt.Scanln(&respuesta)
-						// Se envia el numero ingresado por el jugador 1
-						//se retorna el estado del jugador
-						// ctxLider, cancelLider := context.WithTimeout(context.Background(), time.Second)
-						// defer cancelLider()
-						// r, err := cLider.SayHello(ctxLider, &pb.MessageRequest{Numero: respuesta}) //Editar segun este el proto
-						// if err != nil {
-						// 	log.Fatalf("could not greet: %v", err)
-						// }
-						//status == true -> vivo
-						//status, err := cLider.Juego1(ctx, &pb.Playermove{Move: respuesta,})
 						if err != nil {
 							log.Fatalf("could not greet: %v", err)
 						}

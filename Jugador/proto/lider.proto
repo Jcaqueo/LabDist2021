@@ -17,7 +17,13 @@ message Playermove {
     int32 move = 1;
 }
 
+message Nextgame {
+    int32 answer = 1;
+}
+
+
 service StartServer{
     rpc AgregarJugador(Name) returns (Status) {}
     rpc Juego1(Playermove) returns (Status) {}
+    rpc Siguientejuego(Name) returns (Nextgame) {}
 }
