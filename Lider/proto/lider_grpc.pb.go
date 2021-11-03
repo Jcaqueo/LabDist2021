@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type StartServerClient interface {
 	AgregarJugador(ctx context.Context, in *Name, opts ...grpc.CallOption) (*Status, error)
 	Juego1(ctx context.Context, in *Playermove, opts ...grpc.CallOption) (*Status, error)
+	Siguientejuego(ctx context.Context, in *Name, opts ...grpc.CallOption) (*Nextgame, error)
 }
 
 type startServerClient struct {
@@ -48,12 +49,22 @@ func (c *startServerClient) Juego1(ctx context.Context, in *Playermove, opts ...
 	return out, nil
 }
 
+func (c *startServerClient) Siguientejuego(ctx context.Context, in *Name, opts ...grpc.CallOption) (*Nextgame, error) {
+	out := new(Nextgame)
+	err := c.cc.Invoke(ctx, "/lider.StartServer/Siguientejuego", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StartServerServer is the server API for StartServer service.
 // All implementations must embed UnimplementedStartServerServer
 // for forward compatibility
 type StartServerServer interface {
 	AgregarJugador(context.Context, *Name) (*Status, error)
 	Juego1(context.Context, *Playermove) (*Status, error)
+	Siguientejuego(context.Context, *Name) (*Nextgame, error)
 	mustEmbedUnimplementedStartServerServer()
 }
 
@@ -66,6 +77,9 @@ func (UnimplementedStartServerServer) AgregarJugador(context.Context, *Name) (*S
 }
 func (UnimplementedStartServerServer) Juego1(context.Context, *Playermove) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Juego1 not implemented")
+}
+func (UnimplementedStartServerServer) Siguientejuego(context.Context, *Name) (*Nextgame, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Siguientejuego not implemented")
 }
 func (UnimplementedStartServerServer) mustEmbedUnimplementedStartServerServer() {}
 
@@ -116,6 +130,24 @@ func _StartServer_Juego1_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StartServer_Siguientejuego_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Name)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StartServerServer).Siguientejuego(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lider.StartServer/Siguientejuego",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StartServerServer).Siguientejuego(ctx, req.(*Name))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StartServer_ServiceDesc is the grpc.ServiceDesc for StartServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -130,6 +162,10 @@ var StartServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Juego1",
 			Handler:    _StartServer_Juego1_Handler,
+		},
+		{
+			MethodName: "Siguientejuego",
+			Handler:    _StartServer_Siguientejuego_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

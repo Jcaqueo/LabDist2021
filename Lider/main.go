@@ -21,6 +21,8 @@ var siguientepaso int = 0
 var esperandoporjugadores int = 16
 var juego1 int32 = 1
 
+var siguientejuego int32 = 0
+
 // Server
 type server struct {
 	pb.UnimplementedStartServerServer
@@ -44,23 +46,29 @@ func InitServer(port string) {
 }
 
 func (s *server) AgregarJugador(ctx context.Context, jugador *pb.Name ) (*pb.Status, error){
-	fmt.Println("El jugador %v fue anadido al juego",jugador)
-	//tiempo muerto esperando que el lider inicie el juego
-	// for siguientepaso < 1 {
-		
-	// }
+	fmt.Println("El jugador",jugador.Name,"fue anadido al juego")
+
 
 	//cuando cambie el estado devolvemos la variable
 	siguientepaso = 0
 	//retornamos el estado del jugador
 	retorno := &pb.Status{
 		Status: true,
+	}
+	return retorno, nil
+}
+
+func (s *server) Siguientejuego(ctx context.Context, jugador *pb.Name) (*pb.Nextgame, error){
+	fmt.Println("Un jugador esta esperando empezar a jugar")
+	//retornamos la orden del juego
+	retorno := &pb.Nextgame{
+		Answer: siguientejuego,
 	  }
 	return retorno, nil
 }
 
 func (s *server) Juego1(ctx context.Context, movidajugador *pb.Playermove ) (*pb.Status , error){
-	fmt.Println("El jugador %v fue anadido al juego",movidajugador)
+	fmt.Println("El jugador %v fue anadido al juego",movidajugador.Move)
 	//ya se escogio el numero random por lo tanto haremos el check
 	if movidajugador.Move >= juego1 {
 		//cuando cambie el estado devolvemos la variable
@@ -108,6 +116,7 @@ func main() {
 			if decision == 1{
 				estadodeljuego += 1
 				siguientepaso = 1
+				siguientejuego = 1
 			} else {
 				fmt.Println("Comando no reconocido")
 			}
@@ -115,8 +124,10 @@ func main() {
 			//Esperamos a todos los jugadores
 
 			//Se ecoge el numero aleatorio
-			juego1 := rand.Intn(10 - 6 + 1) + 6
-			fmt.Println("numero de la ronda: %v",juego1)
+			//juego1 := rand.Intn(10 - 6 + 1) + 6
+			time.Sleep(4 * time.Second)
+			fmt.Println("Se inicio el juego 1")
+
 
 		}
 
