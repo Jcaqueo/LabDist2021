@@ -19,6 +19,7 @@ const (
 )
 
 var esperandoorden int32 = 1
+var eliminado = false
 
 //(pb.StartServerClient, context.Context)
 func Conect() (){
@@ -58,7 +59,7 @@ func PedirinicioDejuego() (){
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	//log.Printf("%v",r.Answer)
+	log.Printf("%v",r.Answer)
 	if r.Answer == 1{
 		esperandoorden = 0
 	} else{
@@ -69,77 +70,124 @@ func PedirinicioDejuego() (){
 
 }
 
-// func (s *server) AgregarJugador(ctx context.Context, jugador *pb.Name ) (*pb.Status, error){
+func PedirEstadoLider() (*pb.Status, error){
+	//Conneccion al Lider
+	connLider, errLider := grpc.Dial(addressLider, grpc.WithInsecure(), grpc.WithBlock())
+	if errLider != nil {
+		log.Fatalf("did not connect: %v", errLider)
+	}
+	defer connLider.Close()
+	//retornamos la instancia con el lider
+	cLider := pb.NewStartServerClient(connLider)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	r, err := cLider.EstadoLider(ctx, &pb.Name{Name: "Jugador 1",})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	return r,nil
 
-// 	retorno := &pb.Status{
-// 		Status: true,
-// 	  }
-// 	return retorno, nil
-// }
+}
+
+func EnviarRespuesta(numero int32) (*pb.Status , error){
+
+	//Conneccion al Lider
+	connLider, errLider := grpc.Dial(addressLider, grpc.WithInsecure(), grpc.WithBlock())
+	if errLider != nil {
+		log.Fatalf("did not connect: %v", errLider)
+	}
+	defer connLider.Close()
+	//retornamos la instancia con el lider
+	cLider := pb.NewStartServerClient(connLider)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	r, err := cLider.MandarALider(ctx, &pb.Playermove{Move: numero,})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+
+	return r,nil
+
+}
+
+
+
 
 func main() {
 
 	var decision int = 0
-	var eliminado = false
-	var juego int = 1
 	var respuesta int32
+	//var verposo int32
 
 	fmt.Println("Jugador 1, Bienvenido al Juego del Calamar")
+	fmt.Println("[1] Para ingresar al juego")
+	fmt.Scanln(&decision)
+
+	Conect()
+
 
 	for !eliminado {
-		if decision == 0{
-			fmt.Println("[1] Para ingresar a la ronda ", juego, " del Juego del Calamar")
-			fmt.Println("[2] Para ver el monto acumulado del pozo")
-			fmt.Print("Jugador 1, Decida que acción realizar: ")
-			fmt.Scanln(&decision)
-		}
-
 		if decision == 1 {
-			Conect()
-			//esperamos que el lider empiece el juego
 			for esperandoorden >= 1{
 				//estamos esperando orden
 				//llamamos a la funcion
 				PedirinicioDejuego()
 				
-				time.Sleep(2 * time.Second)
-				fmt.Println("Esperando que inicie el juego")
+				fmt.Println("Esperando que inicie la ronda 1")
+				time.Sleep(1 * time.Second)
 			}
-			var err *int = nil
-			status := true
-			//status, err := cLider.AgregarJugador(ctx, &pb.AgregarJugador{Name: "Pedrito",})
-			if err != nil {
-				log.Fatalf("could not greet: %v", err)
-			}
-			fmt.Println("Comienza el juego número ", juego) // Deberia ser un mensaje entregado por el lider
-			for juego < 4 {
-				if juego == 1{
-					for ronda := 1; ronda <= 4; ronda++ {
-						fmt.Print("Jugador 1, Ingrese su número: ")
-						fmt.Scanln(&respuesta)
-						if err != nil {
-							log.Fatalf("could not greet: %v", err)
+			//Juego 1
+			fmt.Println("Comienza el juego número 1") // dentro de decision == 2
+			for ronda := 1; ronda <= 4; ronda++ {
+				fmt.Print("Jugador 1, Ingrese su número: ")
+				fmt.Scanln(&respuesta)
+				//esperamos que el Lider responda 
+				for 2 >= 1{
+					fmt.Println("Esperando a que el líder de su respuesta")
+					//time.Sleep(10 * time.Second)
+					r,_ := PedirEstadoLider()
+					if r.Status{
+				    	fmt.Println("Respondio")
+						break
 						}
-						//almacenamos el estado
-						eliminado = status 
-						if eliminado == true {
-							juego = 0
-							break
-						}
-					}
-				fmt.Println("Sobreviviste al primer juego xd")
-				juego += 1
-				decision = 0
-				break
-
 				}
-
+				//Enviar respuesta jugador
+				s,_ := EnviarRespuesta(respuesta)
+				//retornar true or false
+				status := s.Status//func que recibe la data
+				//almacenamos el estado
+				fmt.Println("status: ", status)
+				if !status{
+					eliminado = true
+				} 
+				fmt.Println("eliminado: ", eliminado)
+				if eliminado == true {
+					decision = 3
+					break
+				}
 			}
+			decision +=1 
+		} else if decision == 2 {
+			fmt.Println("Sobreviviste al juego")
+			fmt.Println("Juego 2")
+			decision +=1 
+			
+		} else if decision == 3 {
+			fmt.Println("Sobreviviste al juego")
+			fmt.Println("Juego 2")
+			decision +=1 
 		}
-
-		if decision == 2 {
-			fmt.Println("El monto acumulado actualmente es ...")
+		if decision == 4 {
+			fmt.Println("Fuiste Eliminado")
+			break
 		}
+		
+		// fmt.Println("¿Quieres ver el pozo acumulado?")
+		// fmt.Println("[1] Si")
+		// fmt.Println("[2] No")
+		// fmt.Print("Jugador 1, Decida que acción realizar: ")
+		// fmt.Scanln(&verposo)
+		// // Cambiarverposo
 	}
-	fmt.Println("Fuiste Eliminado")
+	return
 }

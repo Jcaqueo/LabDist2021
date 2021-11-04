@@ -14,14 +14,16 @@ import (
 const (
 	port = ":50051"
 
-
 )
 
 var siguientepaso int = 0
 var esperandoporjugadores int = 16
-var juego1 int32 = 1
+var Respuestajuego1 int32 = 0
 
 var siguientejuego int32 = 0
+var respuestaLider int32 = 0
+
+var round int32 = 1
 
 // Server
 type server struct {
@@ -67,29 +69,71 @@ func (s *server) Siguientejuego(ctx context.Context, jugador *pb.Name) (*pb.Next
 	return retorno, nil
 }
 
-func (s *server) Juego1(ctx context.Context, movidajugador *pb.Playermove ) (*pb.Status , error){
-	fmt.Println("El jugador %v fue anadido al juego",movidajugador.Move)
+
+func (s *server) SeSolicitoPozo(ctx context.Context, name *pb.Name ) (*pb.Amount , error){
+	fmt.Println("El jugador %v solicitio el valor del pozo", name.Name)
+
+	//Conneccion al pozo
+	connPozo, errLider := grpc.Dial(port, grpc.WithInsecure(), grpc.WithBlock())
+	if errLider != nil {
+		log.Fatalf("did not connect: %v", errLider)
+	}
+	defer connPozo.Close()
+	//retornamos la instancia con el lider
+	cPozo := pb.NewStartServerClient(connPozo)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	r, err := cPozo.PedirPozo(ctx, &pb.Msg{Message: "El Lider esta pidiendo el valor del pozo",})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+
+	return r,nil
+
+}
+
+func (s *server) EstadoLider(ctx context.Context, name *pb.Name ) (*pb.Status , error){
+	fmt.Println("Estado solicitado por", name.Name)
+
+	if respuestaLider == 0{
+		retorno := &pb.Status{
+			Status: false,
+		}
+		return retorno, nil
+	} else {
+		respuestaLider = 0
+		retorno := &pb.Status{
+			Status: true,
+		}
+		return retorno, nil
+
+	}
+
+	
+}
+
+func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove ) (*pb.Status , error){
+
+	fmt.Println("La movida del jugador fue:",movidajugador.Move)
 	//ya se escogio el numero random por lo tanto haremos el check
-	if movidajugador.Move >= juego1 {
-		//cuando cambie el estado devolvemos la variable
-		siguientepaso = 0
+	if movidajugador.Move >= Respuestajuego1 {
 		//retornamos el estado del jugador
 		retorno := &pb.Status{
 			Status: false,
 		  }
+		Respuestajuego1 = 0
 		return retorno, nil
 	} else{
-		//cuando cambie el estado devolvemos la variable
-		siguientepaso = 0
 		//retornamos el estado del jugador
 		retorno := &pb.Status{
 			Status: true,
 		  }
+		round += 1
+		Respuestajuego1 = 0
 		return retorno, nil
 	}
 
 }
-
 
 func main() {
 	//Iniciamos el servidor del del lider
@@ -106,7 +150,6 @@ func main() {
 	// matenemos la interfaz andando 
 	for estadodeljuego < 5{
 		var decision int
-		
 		if estadodeljuego == 0{
 			//realizamos la primera orden
 			fmt.Println("Desea iniciar el juego?")
@@ -115,18 +158,31 @@ func main() {
 			fmt.Scan(&decision)
 			if decision == 1{
 				estadodeljuego += 1
-				siguientepaso = 1
 				siguientejuego = 1
 			} else {
 				fmt.Println("Comando no reconocido")
+
 			}
 		} else if estadodeljuego == 1{
-			//Esperamos a todos los jugadores
+			//actualizar el valor de la respuesta
+			if Respuestajuego1 == 0{
+				//actualizamos el valor random
+				Respuestajuego1 = rand.Int31n(4) + 6
+				
+				//el Lider respondio
+				respuestaLider = 1
+				//esperamos un tiempito jiji
+				//time.Sleep(5 * time.Second)
+				if round > 5{
+					estadodeljuego +=1
+				}
 
-			//Se ecoge el numero aleatorio
-			//juego1 := rand.Intn(10 - 6 + 1) + 6
-			time.Sleep(4 * time.Second)
-			fmt.Println("Se inicio el juego 1")
+			} else{
+				fmt.Println("stop, numero lider: ", Respuestajuego1)
+				time.Sleep(5 * time.Second)
+			}
+			
+	
 
 
 		}
