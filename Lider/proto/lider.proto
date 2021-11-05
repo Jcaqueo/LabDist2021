@@ -11,7 +11,8 @@ message Name {
 
 message Status {
     bool status = 1;
-    bool time = 2;
+    int32 time = 2;
+    bool ganador = 3;
 }
 
 message Playermove {
@@ -39,6 +40,8 @@ service StartServer{
     rpc SeSolicitoPozo(Name) returns (Amount) {}
     rpc EstadoLider(Name) returns (Status) {}
     rpc MandarALider(Playermove) returns (Status) {}
+    rpc MandarALider2(Playermove) returns (Msg) {}
+    rpc RetornarEstado(Msg) returns (Status) {}
     
     
 }

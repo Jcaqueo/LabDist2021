@@ -25,6 +25,8 @@ type StartServerClient interface {
 	SeSolicitoPozo(ctx context.Context, in *Name, opts ...grpc.CallOption) (*Amount, error)
 	EstadoLider(ctx context.Context, in *Name, opts ...grpc.CallOption) (*Status, error)
 	MandarALider(ctx context.Context, in *Playermove, opts ...grpc.CallOption) (*Status, error)
+	MandarALider2(ctx context.Context, in *Playermove, opts ...grpc.CallOption) (*Msg, error)
+	RetornarEstado(ctx context.Context, in *Msg, opts ...grpc.CallOption) (*Status, error)
 }
 
 type startServerClient struct {
@@ -98,6 +100,24 @@ func (c *startServerClient) MandarALider(ctx context.Context, in *Playermove, op
 	return out, nil
 }
 
+func (c *startServerClient) MandarALider2(ctx context.Context, in *Playermove, opts ...grpc.CallOption) (*Msg, error) {
+	out := new(Msg)
+	err := c.cc.Invoke(ctx, "/lider.StartServer/MandarALider2", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *startServerClient) RetornarEstado(ctx context.Context, in *Msg, opts ...grpc.CallOption) (*Status, error) {
+	out := new(Status)
+	err := c.cc.Invoke(ctx, "/lider.StartServer/RetornarEstado", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StartServerServer is the server API for StartServer service.
 // All implementations must embed UnimplementedStartServerServer
 // for forward compatibility
@@ -109,6 +129,8 @@ type StartServerServer interface {
 	SeSolicitoPozo(context.Context, *Name) (*Amount, error)
 	EstadoLider(context.Context, *Name) (*Status, error)
 	MandarALider(context.Context, *Playermove) (*Status, error)
+	MandarALider2(context.Context, *Playermove) (*Msg, error)
+	RetornarEstado(context.Context, *Msg) (*Status, error)
 	mustEmbedUnimplementedStartServerServer()
 }
 
@@ -136,6 +158,12 @@ func (UnimplementedStartServerServer) EstadoLider(context.Context, *Name) (*Stat
 }
 func (UnimplementedStartServerServer) MandarALider(context.Context, *Playermove) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MandarALider not implemented")
+}
+func (UnimplementedStartServerServer) MandarALider2(context.Context, *Playermove) (*Msg, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MandarALider2 not implemented")
+}
+func (UnimplementedStartServerServer) RetornarEstado(context.Context, *Msg) (*Status, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetornarEstado not implemented")
 }
 func (UnimplementedStartServerServer) mustEmbedUnimplementedStartServerServer() {}
 
@@ -276,6 +304,42 @@ func _StartServer_MandarALider_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StartServer_MandarALider2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Playermove)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StartServerServer).MandarALider2(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lider.StartServer/MandarALider2",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StartServerServer).MandarALider2(ctx, req.(*Playermove))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StartServer_RetornarEstado_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Msg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StartServerServer).RetornarEstado(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lider.StartServer/RetornarEstado",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StartServerServer).RetornarEstado(ctx, req.(*Msg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StartServer_ServiceDesc is the grpc.ServiceDesc for StartServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -310,6 +374,14 @@ var StartServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MandarALider",
 			Handler:    _StartServer_MandarALider_Handler,
+		},
+		{
+			MethodName: "MandarALider2",
+			Handler:    _StartServer_MandarALider2_Handler,
+		},
+		{
+			MethodName: "RetornarEstado",
+			Handler:    _StartServer_RetornarEstado_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
