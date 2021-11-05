@@ -11,6 +11,7 @@ message Name {
 
 message Status {
     bool status = 1;
+    bool time = 2;
 }
 
 message Playermove {
