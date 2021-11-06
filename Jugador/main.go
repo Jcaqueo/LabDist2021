@@ -132,7 +132,7 @@ func EnviarRespuesta2(numero int32) (){
 
 }
 
-func RetornarEstado() (*pb.Status){
+func RetornarE() (*pb.Status){
 
 	//Conneccion al Lider
 	connLider, errLider := grpc.Dial(addressLider, grpc.WithInsecure(), grpc.WithBlock())
@@ -146,7 +146,7 @@ func RetornarEstado() (*pb.Status){
 	defer cancel()
 
 
-	r, err := cLider.RetornarEstado(ctx, &pb.Msg{Message: "Jugador 1 solicita nuevo estado"},)
+	r, err := cLider.RetornarEstado(ctx, &pb.Msg{Message: "Jugador 1 solicita nuevo estado",})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -220,10 +220,10 @@ func main() {
 			for {
 				//estamos esperando orden
 				//llamamos a la funcion
-				s := RetornarEstado()
-				fmt.Println("Esperando veredicto del juego")
+				s := RetornarE()
+				//fmt.Println("Esperando veredicto del juego")
 				//miramos si ganaste el juego
-				fmt.Println(s)
+				fmt.Println(s.Time)
 				if s.Time == 1 {
 					if s.Ganador == true{
 						fmt.Println("Felicidades Ganaste el Juego")
@@ -259,7 +259,9 @@ func main() {
 			EnviarRespuesta2(respuesta)
 			//esperamos que el lider nos mande nuestro nuevo estado
 			for {
-				s:= RetornarEstado()
+				fmt.Println("lider devolviendo estado ronda 1")
+				s := RetornarE()
+				fmt.Println(s.Time)
 				if s.Time == 1{
 					//miramos si el jugador esta muerto 
 					//status = false -> muerte
@@ -270,17 +272,81 @@ func main() {
 					}
 					break
 				}
+				time.Sleep(1 * time.Second)
 			} 
 			//si no retorna es porque estamos vivos
 			decision += 1
 			
 		} else if decision == 3 {
+			//esperando veredicto
+			for {
+				//estamos esperando orden
+				//llamamos a la funcion
+				s := RetornarE()
+				//fmt.Println("Esperando veredicto del juego")
+				//miramos si ganaste el juego
+				fmt.Println(s.Time)
+				if s.Time == 2 {
+					if s.Ganador == true{
+						fmt.Println("Felicidades Ganaste el Juego")
+						return
+					} else if s.Status == false{
+						fmt.Println("Fusite eliminado del juego")
+						return
+					}
+					break
+				}
+				
+				fmt.Println("Esperando veredicto del juego")
+				time.Sleep(1 * time.Second)
+			}
+			
+
 			fmt.Println("Sobreviviste al juego")
+
 			fmt.Println("Juego 3")
+			//esperar a que el lider inicie la ronda del juego
+			esperandoorden = 1
+			for esperandoorden >= 1{
+				//estamos esperando orden
+				//llamamos a la funcion
+				PedirinicioDejuego()
+				
+				fmt.Println("Esperando que inicie la ronda 3")
+				time.Sleep(1 * time.Second)
+			}
+
+			//Mandamos al respuesta del juego 2
+			fmt.Print("Jugador 1, Ingrese su número: ")
+			fmt.Scanln(&respuesta)
+			EnviarRespuesta2(respuesta)
+			//esperamos que el lider nos mande nuestro nuevo estado
+			for {
+				s := RetornarE()
+				//fmt.Println(s.Time)
+				if s.Time == 3{
+					//miramos si el jugador esta muerto 
+					//status = false -> muerte
+					fmt.Println(s)
+					if s.Status == false{
+						fmt.Println("Fuiste eliminado del juego")
+						//terminamos el juego
+						return
+					}
+					break
+				}
+				time.Sleep(1 * time.Second)
+			} 
+
+
+
+
+
+
 			decision +=1 
 		}
 		if decision == 4 {
-			fmt.Println("Fuiste Eliminado")
+			fmt.Println("Ganaste el juego!")
 			break
 		}
 		
