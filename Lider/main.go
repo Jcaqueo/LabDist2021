@@ -26,7 +26,6 @@ var JugadorPos jugadorPos
 
 var jugadores []jugador
 var jugadores2 []jugador
-var texto []string
 
 var tim int32 = 1
 
@@ -722,9 +721,13 @@ func main() {
 			respuesta = true
 			fmt.Println("Desea iniciar la segunda ronda del juego?")
 			fmt.Println("[1] Si")
+			fmt.Println("[2] Consultar Pozo")
 			fmt.Scan(&decision)
 			if decision == 1 {
 				//iniciamos el juego
+				siguientejuego = 1
+			} else if decision == 2 {
+				solicitarMonto()
 				siguientejuego = 1
 			}
 
@@ -798,7 +801,7 @@ func main() {
 					muerto := strconv.Itoa(jugadores[i].numero)+";"+strconv.Itoa(estadodeljuego)
 					informarPozo(muerto)
 					fmt.Println("Jugador ", jugadores[i].numero, "Ha muerto")
-					//muerto := jugadores[i].numero+";"+estadodeljuego		<----------------------------------------------------------------------------
+					//muerto := jugadores[i].numero+";"+estadodeljuego
 					jugadores = removeJugador(jugadores, i)
 					i--
 				}
@@ -852,10 +855,14 @@ func main() {
 		fmt.Println(JugadorPos.index)
 		fmt.Println("Desea iniciar la tercera ronda del juego?")
 			fmt.Println("[1] Si")
+			fmt.Println("[2] Consultar Monto")
 			fmt.Scan(&decision)
 			if decision == 1 {
 				//iniciamos el juego
 				siguientejuego = 1
+			} else if decision == 2{
+				solicitarMonto()
+				siguientejuego = 2
 			}
 
 			
@@ -929,6 +936,7 @@ func main() {
 				ganador = true
 			}
 		}
+		solicitarMonto()
 		time.Sleep(7 * time.Second)
 		return
 		}	
