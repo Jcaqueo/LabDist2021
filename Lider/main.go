@@ -23,8 +23,10 @@ var JugadorPos jugadorPos
 
 var jugadores []jugador
 var jugadores2 []jugador
+var texto []string
 
 var tim int32 = 1
+
 
  
 // respuesta que da el Lider a los juegos
@@ -160,7 +162,8 @@ func Juego1Bot(jugadores []jugador, numeroLider int32) ([]jugador){
 		for i := 1; i < len(jugadores); i++ {  
 			if jugadores[i].suma < 21 {
 				numeroBot := rand.Int31n(5) + 4
-				jugadores[i].suma +=numeroBot
+				texto[i] += string(numeroBot)+"," //jugadores[i].numero -> id jugador 
+				jugadores[i].suma +=numeroBot //jugadores[i].suma -> suma total
 				//fmt.Println("El numero escogido por ", jugadores[i].numero, "es", numeroBot)
 				if numeroBot >= numeroLider {
 					//fmt.Println("Se actualizo jugador: ", jugadores[i].numero)
@@ -175,6 +178,7 @@ func Juego1Bot(jugadores []jugador, numeroLider int32) ([]jugador){
 		for i := 0; i < len(jugadores); i++ {
 			if jugadores[i].suma < 21 {
 				numeroBot := rand.Int31n(5) + 4
+				texto[i] += string(numeroBot)+","
 				jugadores[i].suma +=numeroBot
 				//fmt.Println("El numero escogido por ", jugadores[i].numero, "es", numeroBot)
 				if numeroBot >= numeroLider {
@@ -208,6 +212,7 @@ func EmparejarJuego2() (){
 	if len(jugadores)%2 == 1{
 		index_eliminar := rand.Intn(len(jugadores))
 		fmt.Println("Lista impar, se elimino al jugador",index_eliminar + 1)
+		//muerto := jugadores[index_eliminar].numero+";"+string(2) <---------------------------------------------------------------------------------- 
 		jugadores = removeJugador(jugadores, index_eliminar)
 	}
 	
@@ -319,6 +324,7 @@ func ShuffleJuego3(){
 	if len(jugadores)%2 == 1{
 		index_eliminar := rand.Intn(len(jugadores))
 		fmt.Println("Lista impar, se elimino al jugador",index_eliminar)
+		//muerto := jugadores[index_eliminar].numero+";"+string(3) <------------------------------------------------------
 		jugadores = removeJugador(jugadores, index_eliminar)
 	}
 
@@ -362,6 +368,7 @@ func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove)
 			Status: jugadores[0].state,
 			Time : 0,
 		}
+		texto[0] += string(movidajugador.Move)+","
 		Respuestajuego = 0
 		round += 1
 		return retorno, nil
@@ -376,6 +383,7 @@ func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove)
 			Status: jugadores[0].state,
 			Time : 0,
 		}
+		texto[0] += string(movidajugador.Move)+","
 		Respuestajuego = 0
 		round += 1
 		return retorno, nil
@@ -393,6 +401,7 @@ func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove)
 			Status: jugadores[0].state,
 			Time : 0,
 		}
+		//texto[0] += string(movidajugador.Move)+","
 		Respuestajuego = 0
 		round += 1
 		return retorno, nil
@@ -406,6 +415,7 @@ func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove)
 		Status: jugadores[0].state,
 		Time : 0,
 	}
+	texto[0] += string(movidajugador.Move)+","
 	Respuestajuego = 0
 	round += 1
 	return retorno, nil
@@ -446,6 +456,7 @@ func (s *server) RetornarEstado(ctx context.Context, Mensajejugador *pb.Msg) (*p
 		respuesta = true
 		return retorno, nil
 	}else  if respuesta {
+		fmt.Println("paso por respuesta")
 		retorno := &pb.Status{
 			Status: jugadores[JugadorPos.index].state,
 			Time : tim,
@@ -520,6 +531,7 @@ func main() {
 				//Creamos nuestra lista de jugadores, con (id_jugador, estado = vivo)
 				for i := 1; i <= 16; i++ {
 					jugadores = append(jugadores, jugador{i, true, 0})
+					texto = append(texto, string(i)+"-") 
 				}
 			} else {
 				fmt.Println("Comando no reconocido")
@@ -546,7 +558,7 @@ func main() {
 						return 
 
 					}
-
+					
 					
 
 					EmparejarJuego2()
@@ -591,6 +603,7 @@ func main() {
 				for i := 0; i < len(jugadores); i++ {
 					if !(jugadores[i].state) {
 						fmt.Println("Jugador ", jugadores[i].numero, "Ha muerto")
+						//muerto := jugadores[i].numero+";"+estadodeljuego
 						jugadores = removeJugador(jugadores, i)
 						i--
 					}
@@ -679,10 +692,11 @@ func main() {
 			for i := 0; i < len(jugadores); i++ {
 				if !(jugadores[i].state) {
 					if jugadores[i].numero == 1{
-						tim += 1
+						tim = 1
 						vivo = false
 					}
 					fmt.Println("Jugador ", jugadores[i].numero, "Ha muerto")
+					//muerto := jugadores[i].numero+";"+estadodeljuego		<----------------------------------------------------------------------------
 					jugadores = removeJugador(jugadores, i)
 					i--
 				}
@@ -708,7 +722,7 @@ func main() {
 				if jugadores[0].numero == 1{
 					ganador = true
 				}	
-				time.Sleep(5 * time.Second)
+				time.Sleep(10 * time.Second)
 				return 
 			}
 
@@ -782,17 +796,18 @@ func main() {
 					if vivo {
 						if jugadores[i].numero == 1{
 							JugadorPos.index = i
-							respuesta = true
+							respuesta = false
 							vivo = false
 							
 						}
 					}
 					fmt.Println("Jugador ", jugadores[i].numero, "Ha muerto")
+					//muerto := jugadores[i].numero+";"+estadodeljuego <------------------------------------------------------------------------
 					jugadores = removeJugador(jugadores, i)
 					i--
 				}
 		}
-		//tim+= 1
+		tim+= 1
 		//retornar ganadores -> son los ganadores del squid game
 		fmt.Println("Los ganadores del Squid Game son lo siguientes:")
 		for i := 0; i < len(jugadores); i++{
@@ -801,7 +816,7 @@ func main() {
 				ganador = true
 			}
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(7 * time.Second)
 		return
 		}	
 	}

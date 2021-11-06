@@ -260,6 +260,7 @@ func main() {
 			//esperamos que el lider nos mande nuestro nuevo estado
 			for {
 				fmt.Println("lider devolviendo estado ronda 1")
+				time.Sleep(3 * time.Second)
 				s := RetornarE()
 				fmt.Println(s.Time)
 				if s.Time == 1{
@@ -272,7 +273,7 @@ func main() {
 					}
 					break
 				}
-				time.Sleep(1 * time.Second)
+				
 			} 
 			//si no retorna es porque estamos vivos
 			decision += 1
@@ -307,7 +308,7 @@ func main() {
 			fmt.Println("Juego 3")
 			//esperar a que el lider inicie la ronda del juego
 			esperandoorden = 1
-			for esperandoorden >= 1{
+			for esperandoorden == 1{
 				//estamos esperando orden
 				//llamamos a la funcion
 				PedirinicioDejuego()
@@ -323,7 +324,7 @@ func main() {
 			//esperamos que el lider nos mande nuestro nuevo estado
 			for {
 				s := RetornarE()
-				//fmt.Println(s.Time)
+				fmt.Println(s.Time)
 				if s.Time == 3{
 					//miramos si el jugador esta muerto 
 					//status = false -> muerte
@@ -337,11 +338,6 @@ func main() {
 				}
 				time.Sleep(1 * time.Second)
 			} 
-
-
-
-
-
 
 			decision +=1 
 		}
