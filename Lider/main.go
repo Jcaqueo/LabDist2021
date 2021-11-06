@@ -8,7 +8,10 @@ import (
 	"math/rand"
 	"net"
 	"time"
-
+	pbnm "Lider/nmproto"
+	pz "Lider/pzproto"
+        "github.com/streadway/amqp"
+	"strconv"
 	"google.golang.org/grpc"
 )
 
@@ -26,6 +29,9 @@ var jugadores2 []jugador
 
 var tim int32 = 1
 
+var texto []string
+
+var nameNodeIp string = "dist194.inf.santiago.usm.cl:50051"
  
 // respuesta que da el Lider a los juegos
 var Respuestajuego int32 = 0
@@ -59,7 +65,11 @@ type jugadorPos struct {
 	lista int
 }
 
-
+func failOnError(err error, msg string) {
+  if err != nil {
+    log.Fatalf("%s: %s", msg, err)
+  }
+}
 
 func InitServer(port string) {
 	lis, err := net.Listen("tcp", port)
@@ -75,6 +85,83 @@ func InitServer(port string) {
 	}
 
 	return
+}
+
+func enviarJugadas(ronda string, jugadas string) {
+        connNameNode, errNameNode := grpc.Dial(nameNodeIp, grpc.WithInsecure())
+        if errNameNode != nil {
+                log.Fatalf("Error al conectarse al NameNode: %v", errNameNode)
+        }
+
+        defer connNameNode.Close()
+        //retornamos la instancia con el NameNode
+
+        cNameNode := pbnm.NewStartServerClient(connNameNode)
+        ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+        defer cancel()
+
+        status, err := cNameNode.NameNodeStorePlayersMoves(ctx, &pbnm.Playersmoves{Round: ronda, PlayerMoves: jugadas})
+
+        if err != nil {
+                log.Fatalf("No se pudo ejecutar la función de almacenaje de movimientos: %v", err)
+        }
+
+        log.Printf("%s", status)
+}
+
+func solicitarMonto() {
+        connPozo, errPozo := grpc.Dial("dist196.inf.santiago.usm.cl:50051", grpc.WithInsecure())
+        if errPozo != nil {
+                log.Fatalf("Error al conectarse al Pozo: %v", errPozo)
+        }
+
+        defer connPozo.Close()
+        //retornamos la instancia con el Pozo
+
+        cPozo := pz.NewGetAmountClient(connPozo)
+        ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+        defer cancel()
+
+        status, err := cPozo.AskAmount(ctx, &pz.Message{Msg: "0"})
+
+        if err != nil {
+                log.Fatalf("No se pudo ejecutar la función de solicitar pozo: %v", err)
+        }
+
+        log.Printf("%s", status)
+}
+
+func informarPozo(muerto string){
+
+	conn, err := amqp.Dial("amqp://admin:123momiaes@dist196.inf.santiago.usm.cl:5672/")
+	failOnError(err, "Failed to connect to RabbitMQ")
+        defer conn.Close()
+        ch, err := conn.Channel()
+        failOnError(err, "Failed to open a channel")
+        defer ch.Close()
+
+        q, err := ch.QueueDeclare(
+        	"hello", // name
+                false,   // durable
+                false,   // delete when unused
+                false,   // exclusive
+                false,   // no-wait
+                nil,     // arguments
+         )
+        failOnError(err, "Failed to declare a queue")
+
+        body := muerto
+	err = ch.Publish(
+        	"",     // exchange
+                q.Name, // routing key
+                false,  // mandatory
+                false,  // immediate
+                amqp.Publishing {
+       		        ContentType: "text/plain",
+                	Body: []byte(body),
+                },
+       	)
+        failOnError(err, "Failed to publish a message")
 }
 
 func (s *server) AgregarJugador(ctx context.Context, jugador *pb.Name) (*pb.Status, error) {
@@ -160,6 +247,7 @@ func Juego1Bot(jugadores []jugador, numeroLider int32) ([]jugador){
 		for i := 1; i < len(jugadores); i++ {  
 			if jugadores[i].suma < 21 {
 				numeroBot := rand.Int31n(5) + 4
+				texto[i] += strconv.Itoa(int(numeroBot))+","
 				jugadores[i].suma +=numeroBot
 				//fmt.Println("El numero escogido por ", jugadores[i].numero, "es", numeroBot)
 				if numeroBot >= numeroLider {
@@ -175,6 +263,7 @@ func Juego1Bot(jugadores []jugador, numeroLider int32) ([]jugador){
 		for i := 0; i < len(jugadores); i++ {
 			if jugadores[i].suma < 21 {
 				numeroBot := rand.Int31n(5) + 4
+				texto[i] += strconv.Itoa(int(numeroBot))+","
 				jugadores[i].suma +=numeroBot
 				//fmt.Println("El numero escogido por ", jugadores[i].numero, "es", numeroBot)
 				if numeroBot >= numeroLider {
@@ -208,6 +297,8 @@ func EmparejarJuego2() (){
 	if len(jugadores)%2 == 1{
 		index_eliminar := rand.Intn(len(jugadores))
 		fmt.Println("Lista impar, se elimino al jugador",index_eliminar + 1)
+		muerto := strconv.Itoa(jugadores[index_eliminar].numero)+";"+"2"
+                informarPozo(muerto)
 		jugadores = removeJugador(jugadores, index_eliminar)
 	}
 	
@@ -318,6 +409,8 @@ func ShuffleJuego3(){
 	//Revisamos primero si queda una cantidad impar, de ocurrir eliminamos uno random
 	if len(jugadores)%2 == 1{
 		index_eliminar := rand.Intn(len(jugadores))
+		muerto := strconv.Itoa(index_eliminar)+";"+"3"
+                informarPozo(muerto)
 		fmt.Println("Lista impar, se elimino al jugador",index_eliminar)
 		jugadores = removeJugador(jugadores, index_eliminar)
 	}
@@ -362,6 +455,7 @@ func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove)
 			Status: jugadores[0].state,
 			Time : 0,
 		}
+		texto[0] += strconv.Itoa(int(movidajugador.Move))+","
 		Respuestajuego = 0
 		round += 1
 		return retorno, nil
@@ -376,6 +470,7 @@ func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove)
 			Status: jugadores[0].state,
 			Time : 0,
 		}
+		texto[0] += strconv.Itoa(int(movidajugador.Move))+","
 		Respuestajuego = 0
 		round += 1
 		return retorno, nil
@@ -393,6 +488,7 @@ func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove)
 			Status: jugadores[0].state,
 			Time : 0,
 		}
+		//texto[0] += string(movidajugar.Move)+","
 		Respuestajuego = 0
 		round += 1
 		return retorno, nil
@@ -406,6 +502,7 @@ func (s *server) MandarALider(ctx context.Context, movidajugador *pb.Playermove)
 		Status: jugadores[0].state,
 		Time : 0,
 	}
+	texto[0] += strconv.Itoa(int(movidajugador.Move))+","
 	Respuestajuego = 0
 	round += 1
 	return retorno, nil
@@ -520,6 +617,8 @@ func main() {
 				//Creamos nuestra lista de jugadores, con (id_jugador, estado = vivo)
 				for i := 1; i <= 16; i++ {
 					jugadores = append(jugadores, jugador{i, true, 0})
+					texto = append(texto, strconv.Itoa(i)+"-") 
+
 				}
 			} else {
 				fmt.Println("Comando no reconocido")
@@ -546,7 +645,16 @@ func main() {
 						return 
 
 					}
-
+					var jugadas string
+					for i:=0; i<len(texto); i++{
+						if i == len(texto)-1 {
+							jugadas += texto[i]		
+						} else{
+							jugadas += texto[i] + ";"
+						}
+					}
+					
+					enviarJugadas(strconv.Itoa(estadodeljuego-1), jugadas)
 					
 
 					EmparejarJuego2()
@@ -591,6 +699,8 @@ func main() {
 				for i := 0; i < len(jugadores); i++ {
 					if !(jugadores[i].state) {
 						fmt.Println("Jugador ", jugadores[i].numero, "Ha muerto")
+						muerto := strconv.Itoa(jugadores[i].numero)+";"+strconv.Itoa(estadodeljuego)
+						informarPozo(muerto)
 						jugadores = removeJugador(jugadores, i)
 						i--
 					}
@@ -682,6 +792,8 @@ func main() {
 						tim += 1
 						vivo = false
 					}
+					muerto := strconv.Itoa(jugadores[i].numero)+";"+strconv.Itoa(estadodeljuego)
+					informarPozo(muerto)
 					fmt.Println("Jugador ", jugadores[i].numero, "Ha muerto")
 					jugadores = removeJugador(jugadores, i)
 					i--
@@ -717,6 +829,16 @@ func main() {
 			// esperamos que el cliente obtenga su nueva respuesta
 			time.Sleep(5 * time.Second)
 			estadodeljuego += 1
+			
+			var jugadas string
+                        for i:=0; i<len(texto); i++{
+                        	if i == len(texto)-1 {
+                        		jugadas += texto[i]
+                        	} else{
+                        		jugadas += texto[i] + ";"
+                        	}
+                        }
+			enviarJugadas(strconv.Itoa(estadodeljuego-1), jugadas)
 			
 		} else if estadodeljuego == 3{
 		//Logica juego 3 
@@ -788,6 +910,8 @@ func main() {
 						}
 					}
 					fmt.Println("Jugador ", jugadores[i].numero, "Ha muerto")
+					muerto := strconv.Itoa(jugadores[i].numero)+";"+strconv.Itoa(estadodeljuego)
+					informarPozo(muerto)
 					jugadores = removeJugador(jugadores, i)
 					i--
 				}
